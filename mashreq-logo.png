@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Document Not Found</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,300italic,400italic,600italic,700italic,300,600,700,800" />
+  <link href="/sitecore/service/assets/styles.css" rel="stylesheet" />
+  <style>
+    .sc-text-label {
+      white-space: nowrap;
+      width: 1%;
+    }
+  </style>
+<script>var __uzdbm_1 = "beb016cb-2a31-4d44-b083-db63386bc7bf";var __uzdbm_2 = "ZGVlY2U2NmUtY3Fwai00YWVjLThkN2QtZmQ3YmI4NjRiOGMxJDEzLjI1MC4xNzQuMTY0";var __uzdbm_3 = "7f9000beb016cb-2a31-4d44-b083-db63386bc7bf1-17715866296510-002f4ab5be96f1e129210";var __uzdbm_4 = "false";var __uzdbm_5 = "uzmx";var __uzdbm_6 = "7f9000a3990e52-4480-4fd9-adc4-5dca01ea63f21-17715866296510-0edeef6db9ac39a410";var __uzdbm_7 = "mashreq.com";</script> <script>   (function (w, d, e, u, c, g, a, b) {     w["SSJSConnectorObj"] = w["SSJSConnectorObj"] || {       ss_cid: c,       domain_info: "auto",     };     w[g] = function (i, j) {       w["SSJSConnectorObj"][i] = j;     };     a = d.createElement(e);     a.async = true;     if (       navigator.userAgent.indexOf('MSIE') !== -1 ||       navigator.appVersion.indexOf('Trident/') > -1     ) {       u = u.replace("/advanced/", "/advanced/ie/");     }     a.src = u;     b = d.getElementsByTagName(e)[0];     b.parentNode.insertBefore(a, b);   })(     window, document, "script", "https://www.mashreq.com/18f5227b-e27b-445a-a53f-f845fbe69b40/stormcaster.js", "cqpl", "ssConf"   );   ssConf("c1", "https://www.mashreq.com");   ssConf("c3", "c99a4269-161c-4242-a3f0-28d44fa6ce24");   ssConf("cu", "validate.perfdrive.com, ssc");    ssConf("au", "False");   </script></head>
+
+<body class="sc">
+  <div class="sc-task">
+    <header class="sc-globalHeader">
+      <div class="row sc-globalHeader-content">
+        <div class="col-md-3">
+          <div class="sc-globalHeader-startButton">
+            <a class="sc-global-logo medium" title="Go to the start page" href="/"></a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <header class="sc-applicationHeader">
+      <div class="sc-applicationHeader-row1">
+        <div class="sc-applicationHeader-content">
+          <div class="sc-applicationHeader-title">
+            The requested document was not found
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="sc-dialogContent-toolbar">
+      <div class="container">
+        <div class="row sc-dialogContent-toolbar-back">
+          <button class="btn sc-backbutton" type="button" onclick="javascript:history.go(-1);"><span class="sc-backbutton-text">Back</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="sc-applicationContent">
+      <div class="col-md-12 sc-applicationContent-main">
+        <h3>Most likely causes:
+        </h3>
+
+        <ul>
+          
+          <li>The resource you are looking for (or one of its dependencies) has been removed, had its name changed, or is temporarily unavailable.
+              Please review the following URL and make sure that it is spelled correctly.</li>
+        </ul>
+
+        <br />
+
+        <h4>What you can try:
+        </h4>
+
+        <ul>
+          <li>
+            <a href="javascript:history.go(-1);">Go back to the previous page
+            </a>
+          </li>
+          <li>
+            <a href="/">Go to the start page
+            </a>
+          </li>
+        </ul>
+
+        <br />
+
+        <h4>Additional Information:
+        </h4>
+
+        <table class="table">
+          <tr>
+            <td class="sc-text sc-text-label">Requested URL:</td>
+            <td class="sc-text sc-text-value">
+              [unknown]
+            </td>
+          </tr>
+          <tr>
+            <td class="sc-text sc-text-label">User Name:</td>
+            <td class="sc-text sc-text-value">
+              
+            </td>
+          </tr>
+          <tr>
+            <td class="sc-text sc-text-label">Site Name:</td>
+            <td class="sc-text sc-text-value">
+              
+            </td>
+          </tr>
+        </table>
+        <p>
+          If the page you are trying to display exists, please check that an appropriate prefix has been added to the IgnoreUrlPrefixes setting in the web.config.
+        </p>
+      </div>
+    </section>
+  </div>
+  
+<meta name="VIcurrentDateTime" content="639071834297186049" />
+<meta name="VirtualFolder" content="/" />
+<script type="text/javascript" src="/layouts/system/VisitorIdentification.js"></script>
+ 
+ </body>
+</html>
