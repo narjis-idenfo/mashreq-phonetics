@@ -8,9 +8,30 @@ function ExcelUpload({ onDataLoaded }) {
   const [preview, setPreview] = useState(null);
   const fileRef = useRef();
 
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+
+  const uploadToBackend = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Upload failed:', data.error);
+      } else {
+        console.log('File saved to backend:', data.file);
+      }
+    } catch (err) {
+      console.error('Backend upload error:', err);
+    }
+  };
+
   const parseFile = (file) => {
     setError('');
     setFileName(file.name);
+
+    // Send file to backend for storage
+    uploadToBackend(file);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -158,7 +179,7 @@ function ExcelUpload({ onDataLoaded }) {
     ws['!cols'] = [{ wch: 20 }, { wch: 55 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Muslim Names Phonetic Test Case');
-    XLSX.writeFile(wb, 'Muslim Names Phonetic Test Cases.xlsx');
+    XLSX.writeFile(wb, 'phonetics_template.xlsx');
   };
 
   return (
