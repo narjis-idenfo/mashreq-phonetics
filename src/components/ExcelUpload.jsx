@@ -10,6 +10,10 @@ function areSameEntry(left, right) {
   return normaliseNameText(left).toLowerCase() === normaliseNameText(right).toLowerCase();
 }
 
+function toPairKey(primary, variation) {
+  return `${normaliseNameText(primary).toLowerCase()}::${normaliseNameText(variation).toLowerCase()}`;
+}
+
 function scoreDecodedText(text) {
   const urduCount = (text.match(URDU_CHAR_RE) || []).length;
   const replacementCount = (text.match(/\uFFFD/g) || []).length;
@@ -120,6 +124,7 @@ function ExcelUpload({ onDataLoaded }) {
 
         // Skip empty rows and header
         const rows = [];
+        const seenPairs = new Set();
         let startIdx = 0;
 
         // Detect if first row is a header
@@ -146,7 +151,13 @@ function ExcelUpload({ onDataLoaded }) {
               // Support comma / Arabic comma / semicolon / new-line separated variations in a single cell
               val.split(VARIATION_SPLIT_RE).forEach((v) => {
                 const trimmed = normaliseNameText(v);
-                if (trimmed && !areSameEntry(primary, trimmed)) variations.push(trimmed);
+                if (!trimmed || areSameEntry(primary, trimmed)) return;
+
+                const pairKey = toPairKey(primary, trimmed);
+                if (seenPairs.has(pairKey)) return;
+
+                seenPairs.add(pairKey);
+                variations.push(trimmed);
               });
             }
           }

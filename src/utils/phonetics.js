@@ -380,12 +380,19 @@ function compareUploadedPair(primaryName, variationName) {
 /** Process an array of rows from Excel: [{ primary, variations: [...] }] */
 export function processExcelData(rows) {
   const results = [];
+  const seenPairs = new Set();
   for (const row of rows) {
     const primary = normaliseNameText(row.primary);
     if (!primary) continue;
 
     for (const variation of row.variations) {
-      const comparison = compareUploadedPair(primary, variation);
+      const normalisedVariation = normaliseNameText(variation);
+      const pairKey = `${primary.toLowerCase()}::${normalisedVariation.toLowerCase()}`;
+
+      if (!normalisedVariation || seenPairs.has(pairKey)) continue;
+
+      seenPairs.add(pairKey);
+      const comparison = compareUploadedPair(primary, normalisedVariation);
       if (comparison) results.push(comparison);
     }
   }
