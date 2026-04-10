@@ -151,6 +151,16 @@ function PhoneticCompare({ name1, name2, setName1, setName2 }) {
                     )}
                   </td>
                 </tr>
+                {!comparison.isDirectMatch && comparison.isSkeletonMatch && (
+                  <tr>
+                    <td className="row-label">Consonant Skeleton</td>
+                    <td><span className="code secondary sm">{comparison.primarySkeleton}</span></td>
+                    <td><span className="code secondary sm">{comparison.variationSkeleton}</span></td>
+                    <td>
+                      <span className="check yes">✓ Match</span>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

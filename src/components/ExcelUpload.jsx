@@ -6,6 +6,10 @@ const HEADER_HINTS = ['name', 'primary', 'base', '#', 'no', 'variation', 'urdu',
 const VARIATION_SPLIT_RE = /[,،;؛\n]+/;
 const URDU_CHAR_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g;
 
+function areSameEntry(left, right) {
+  return normaliseNameText(left).toLowerCase() === normaliseNameText(right).toLowerCase();
+}
+
 function scoreDecodedText(text) {
   const urduCount = (text.match(URDU_CHAR_RE) || []).length;
   const replacementCount = (text.match(/\uFFFD/g) || []).length;
@@ -142,7 +146,7 @@ function ExcelUpload({ onDataLoaded }) {
               // Support comma / Arabic comma / semicolon / new-line separated variations in a single cell
               val.split(VARIATION_SPLIT_RE).forEach((v) => {
                 const trimmed = normaliseNameText(v);
-                if (trimmed) variations.push(trimmed);
+                if (trimmed && !areSameEntry(primary, trimmed)) variations.push(trimmed);
               });
             }
           }

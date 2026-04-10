@@ -66,6 +66,37 @@ function comparePhoneticInputs(primary, variation) {
   };
 }
 
+function compareLatinNames(primary, variation) {
+  const directComparison = comparePhoneticInputs(primary, variation);
+
+  if (!directComparison) return null;
+
+  const primarySkeleton = consonantSkeleton(primary);
+  const variationSkeleton = consonantSkeleton(variation);
+  const primarySkeletonCodes = primarySkeleton ? getPhoneticCodes(primarySkeleton) : null;
+  const variationSkeletonCodes = variationSkeleton ? getPhoneticCodes(variationSkeleton) : null;
+  const isSkeletonExact =
+    Boolean(primarySkeleton) &&
+    Boolean(variationSkeleton) &&
+    primarySkeleton === variationSkeleton;
+  const isSkeletonMatch =
+    isSkeletonExact || codesMatch(primarySkeletonCodes, variationSkeletonCodes);
+  const isTokenMatch = compareNameTokens(primary, variation);
+
+  return {
+    ...directComparison,
+    isMatch: directComparison.isMatch || isSkeletonMatch || isTokenMatch,
+    primarySkeleton,
+    variationSkeleton,
+    primarySkeletonCodes,
+    variationSkeletonCodes,
+    isDirectMatch: directComparison.isMatch,
+    isSkeletonExact,
+    isSkeletonMatch,
+    isTokenMatch,
+  };
+}
+
 export function compareNames(primary, variation) {
   const left = normaliseNameText(primary);
   const right = normaliseNameText(variation);
@@ -109,7 +140,7 @@ export function compareNames(primary, variation) {
     };
   }
 
-  const comparison = comparePhoneticInputs(left, right);
+  const comparison = compareLatinNames(left, right);
   if (!comparison) return null;
 
   return {
@@ -127,12 +158,12 @@ export function isUrduScript(text) {
 }
 
 /**
- * Strip all vowels from a Latin string to produce a consonant skeleton.
- * Urdu script omits short vowels, so comparing consonant skeletons
- * is the most reliable way to match Urdu transliterations with English.
+ * Strip vowels and weak semi-vowels from a Latin string to produce a
+ * consonant skeleton. This helps catch compressed spellings like
+ * Faisal ↔ Fysl in addition to Urdu transliteration comparisons.
  */
 function consonantSkeleton(str) {
-  return str.toLowerCase().replace(/[aeiou]/g, '');
+  return str.toLowerCase().replace(/[aeiouwy]/g, '');
 }
 
 function dedupeLatinLetters(str) {
@@ -166,7 +197,7 @@ function compareNameTokens(left, right) {
 
   return leftTokens.every((leftToken, index) => {
     const rightToken = rightTokens[index];
-    const tokenComparison = compareNames(leftToken, rightToken);
+    const tokenComparison = comparePhoneticInputs(leftToken, rightToken);
 
     if (tokenComparison?.isMatch) {
       return true;
@@ -295,6 +326,7 @@ function compareUploadedPair(primaryName, variationName) {
   const variation = normaliseNameText(variationName);
 
   if (!primary || !variation) return null;
+  if (primary.toLowerCase() === variation.toLowerCase()) return null;
 
   const primaryIsUrdu = isUrduScript(primary);
   const variationIsUrdu = isUrduScript(variation);
