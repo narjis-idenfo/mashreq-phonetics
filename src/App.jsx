@@ -1,20 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import Header from './components/Header';
 import PhoneticCompare from './components/PhoneticCompare';
+import UrduCompare from './components/UrduCompare';
 import ExcelUpload from './components/ExcelUpload';
 import ResultsTable from './components/ResultsTable';
-import { processExcelData } from './utils/phonetics';
 import './App.css';
 
 function App() {
   const [activeTab, setActiveTab] = useState('compare');
   const [compareName1, setCompareName1] = useState('');
   const [compareName2, setCompareName2] = useState('');
-  const [excelResults, setExcelResults] = useState(null);
+  const [urduName, setUrduName] = useState('');
+  const [englishName, setEnglishName] = useState('');
+  const [excelRows, setExcelRows] = useState(null);
 
   const handleExcelData = useCallback((rows) => {
-    const results = processExcelData(rows);
-    setExcelResults(results);
+    setExcelRows(rows);
   }, []);
 
   const handleTabChange = useCallback((tab) => setActiveTab(tab), []);
@@ -26,6 +27,7 @@ function App() {
       <nav className="tabs">
         {[
           { id: 'compare', label: 'Compare Names', icon: '⚖️' },
+          { id: 'urdu', label: 'Urdu ↔ English', icon: '🔤' },
           { id: 'excel', label: 'Excel Upload', icon: '📊' },
         ].map((tab) => (
           <button
@@ -48,6 +50,14 @@ function App() {
             setName2={setCompareName2}
           />
         )}
+        {activeTab === 'urdu' && (
+          <UrduCompare
+            urduName={urduName}
+            englishName={englishName}
+            setUrduName={setUrduName}
+            setEnglishName={setEnglishName}
+          />
+        )}
         {activeTab === 'excel' && (
           <section className="panel">
             <div className="panel-header">
@@ -57,8 +67,8 @@ function App() {
               </p>
             </div>
             <ExcelUpload onDataLoaded={handleExcelData} />
-            {excelResults && excelResults.length > 0 && (
-              <ResultsTable results={excelResults} />
+            {excelRows && excelRows.length > 0 && (
+              <ResultsTable rows={excelRows} />
             )}
           </section>
         )}

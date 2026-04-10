@@ -1288,3 +1288,31 @@
     font-size: 12px;
   }
 }
+
+/* ── URDU INPUT ────────────────────────────────────── */
+.urdu-input {
+  font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Nafees', 'Urdu Typesetting', 'Segoe UI', Tahoma, serif;
+  font-size: 20px !important;
+  line-height: 2;
+  text-align: right;
+  direction: rtl;
+  letter-spacing: 0;
+}
+
+.urdu-input::placeholder {
+  font-size: 18px;
+  opacity: 0.5;
+}
+
+/* Transliteration code badge */
+.code.translit {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.code.translit.sm {
+  font-size: 13px;
+  padding: 3px 8px;
+}
+

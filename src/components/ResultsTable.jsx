@@ -1,13 +1,63 @@
 import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
+import { compareNames } from '../utils/phonetics';
 
-function ResultsTable({ results }) {
+function ResultsTable({ results, rows }) {
   const [filter, setFilter] = useState('');
   const [filterMatch, setFilterMatch] = useState('all'); // all, match, mismatch
   const [expandedRow, setExpandedRow] = useState(null);
 
+  const sourceResults = useMemo(() => {
+    if (rows?.length) {
+      return rows.flatMap((row) => {
+        if (!row?.primary || !Array.isArray(row.variations)) {
+          return [];
+        }
+
+        return row.variations
+          .map((variation) => {
+            const comparison = compareNames(row.primary, variation);
+
+            if (!comparison) {
+              return null;
+            }
+
+            return {
+              ...comparison,
+              primary: row.primary,
+              variation,
+            };
+          })
+          .filter(Boolean);
+      });
+    }
+
+    return results || [];
+  }, [results, rows]);
+
+  const resolvedResults = useMemo(() => {
+    return sourceResults.map((result) => {
+      const recomputed = compareNames(result.primary, result.variation);
+
+      if (!recomputed) {
+        return result;
+      }
+
+      return {
+        ...result,
+        ...recomputed,
+        primary: result.primary,
+        variation: result.variation,
+        primaryTransliteration:
+          recomputed.primaryTransliteration || result.primaryTransliteration || '',
+        variationTransliteration:
+          recomputed.variationTransliteration || result.variationTransliteration || '',
+      };
+    });
+  }, [sourceResults]);
+
   const filtered = useMemo(() => {
-    let data = [...results];
+    let data = [...resolvedResults];
 
     if (filter.trim()) {
       const q = filter.trim().toLowerCase();
@@ -25,20 +75,22 @@ function ResultsTable({ results }) {
     }
 
     return data;
-  }, [results, filter, filterMatch]);
+  }, [resolvedResults, filter, filterMatch]);
 
   const summary = useMemo(() => {
-    const total = results.length;
-    const matched = results.filter((r) => r.isMatch).length;
-    const noMatch = results.filter((r) => !r.isMatch).length;
+    const total = resolvedResults.length;
+    const matched = resolvedResults.filter((r) => r.isMatch).length;
+    const noMatch = resolvedResults.filter((r) => !r.isMatch).length;
     return { total, matched, noMatch };
-  }, [results]);
+  }, [resolvedResults]);
 
   const handleExportResults = () => {
-    const exportData = results.map((r, i) => ({
+    const exportData = resolvedResults.map((r, i) => ({
       '#': i + 1,
       'Primary Name': r.primary,
       'Variation': r.variation,
+      'Primary Transliteration': r.primaryTransliteration || '',
+      'Variation Transliteration': r.variationTransliteration || '',
       'Phonetic Match': r.isMatch ? '✓ Match' : '✗ No Match',
       'Primary Code (Name)': r.codesA.primary,
       'Secondary Code (Name)': r.codesA.secondary,
@@ -93,7 +145,7 @@ function ResultsTable({ results }) {
           onChange={(e) => setFilter(e.target.value)}
         />
         <span className="results-count">
-          {filtered.length} of {results.length} comparisons
+          {filtered.length} of {resolvedResults.length} comparisons
         </span>
         <button className="btn-export" onClick={handleExportResults}>
           📥 Export Results
@@ -149,6 +201,22 @@ function ResultsTable({ results }) {
                             <div className="detail-card">
                               <h5>Phonetic Codes</h5>
                               <div className="detail-codes">
+                                {(result.primaryTransliteration || result.variationTransliteration) && (
+                                  <>
+                                    <div className="detail-code-row">
+                                      <span className="detail-label">{result.primary}:</span>
+                                      <span className="code translit sm">
+                                        {result.primaryTransliteration || result.primary}
+                                      </span>
+                                    </div>
+                                    <div className="detail-code-row">
+                                      <span className="detail-label">{result.variation}:</span>
+                                      <span className="code translit sm">
+                                        {result.variationTransliteration || result.variation}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
                                 <div className="detail-code-row">
                                   <span className="detail-label">{result.primary}:</span>
                                   <span className="code primary sm">{result.codesA.primary}</span>
