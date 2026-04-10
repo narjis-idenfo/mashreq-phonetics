@@ -14,7 +14,7 @@ const CHAR_MAP = {
   'أ': 'a',
   'إ': 'i',
   'ٱ': 'a',
-  'و': 'w',    // context-dependent: w / u / o
+  'و': 'w',    // context-dependent: w / o / v
   'ی': 'y',    // context-dependent: y / i / ee
   'ي': 'y',    // Arabic ya
   'ے': 'e',
@@ -81,6 +81,14 @@ const CHAR_MAP = {
   'ى': 'a',    // alif maqsura
 };
 
+const CHAR_VARIANTS = {
+  'و': ['w', 'o', 'v'],
+  'ع': ['a', 'u'],
+  'ك': ['k', 'c'],
+  'ڪ': ['k', 'c'],
+  'ک': ['k', 'c'],
+};
+
 // Two-character combinations that should be matched first
 const DIGRAPHS = [
   // aspirated consonants (letter + do-chashmi he ھ)
@@ -113,12 +121,6 @@ function stripInvisible(str) {
   return str.replace(/[\u200B-\u200F\u202A-\u202E\uFEFF\u00AD]/g, '');
 }
 
-function normaliseArabicPresentationForms(str) {
-  return str
-    .normalize('NFKC')
-    .replace(/\u0640/g, '');
-}
-
 /** Deduplicate consecutive identical Latin letters (aa → a, etc.)
  *  Call *after* transliteration to normalise output. */
 function dedup(str) {
@@ -129,21 +131,16 @@ function isWordBoundary(ch) {
   return !ch || /[\s\-\u200C]/.test(ch);
 }
 
-/**
- * Canonicalise English spellings into the Latin equivalents this Urdu
- * transliterator produces, so Urdu/English comparison can align letters
- * such as c/k, o/w, u/ain, and v/waw.
- */
-export function normaliseEnglishForUrduComparison(value) {
-  if (!value || typeof value !== 'string') return '';
+function appendVariants(current, options, maxVariants = 24) {
+  const next = [];
 
-  return stripInvisible(value.trim())
-    .toLowerCase()
-    .replace(/c/g, 'k')
-    .replace(/[ov]/g, 'w')
-    .replace(/u/g, 'a')
-    .replace(/\s+/g, ' ')
-    .trim();
+  for (const prefix of current) {
+    for (const option of options) {
+      next.push(prefix + option);
+    }
+  }
+
+  return [...new Set(next)].slice(0, maxVariants);
 }
 
 // ── Main transliteration function ─────────────────────────────────
@@ -157,7 +154,7 @@ export function normaliseEnglishForUrduComparison(value) {
 export function transliterateUrdu(urdu) {
   if (!urdu || typeof urdu !== 'string') return '';
 
-  let text = normaliseArabicPresentationForms(stripInvisible(urdu.trim()));
+  let text = stripInvisible(urdu.trim());
   let result = '';
   let i = 0;
 
@@ -218,6 +215,70 @@ export function transliterateUrdu(urdu) {
     .trim();
 
   return result;
+}
+
+export function transliterateUrduVariants(urdu) {
+  if (!urdu || typeof urdu !== 'string') return [];
+
+  const text = stripInvisible(urdu.trim());
+  let variants = [''];
+  let i = 0;
+
+  while (i < text.length) {
+    let matched = false;
+    for (const [src, dest] of DIGRAPHS) {
+      if (text.startsWith(src, i)) {
+        variants = appendVariants(variants, [dest]);
+        i += src.length;
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+
+    const ch = text[i];
+    const nextCh = text[i + 1];
+
+    if (ch === '\u0651') {
+      variants = variants.map((value) => (
+        value.length > 0 ? value + value[value.length - 1] : value
+      ));
+      i++;
+      continue;
+    }
+
+    if (ch === ' ' || ch === '-' || ch === '\u200C') {
+      variants = appendVariants(variants, [' ']);
+      i++;
+      continue;
+    }
+
+    if ((ch === 'ہ' || ch === 'ھ' || ch === 'ۃ' || ch === 'ۀ') && isWordBoundary(nextCh)) {
+      variants = appendVariants(variants, ['a']);
+      i++;
+      continue;
+    }
+
+    if (CHAR_VARIANTS[ch]) {
+      variants = appendVariants(variants, CHAR_VARIANTS[ch]);
+      i++;
+      continue;
+    }
+
+    if (CHAR_MAP[ch] !== undefined) {
+      variants = appendVariants(variants, [CHAR_MAP[ch]]);
+    } else if (/[a-zA-Z0-9]/.test(ch)) {
+      variants = appendVariants(variants, [ch.toLowerCase()]);
+    }
+
+    i++;
+  }
+
+  return [...new Set(
+    variants
+      .map((value) => value.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+  )];
 }
 
 /**

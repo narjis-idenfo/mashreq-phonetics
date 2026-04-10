@@ -1,8 +1,8 @@
 import { doubleMetaphone } from 'double-metaphone';
 import {
-  normaliseEnglishForUrduComparison,
   transliterateUrdu,
   transliterateUrduNormalised,
+  transliterateUrduVariants,
 } from './urduTransliteration.js';
 
 /**
@@ -127,13 +127,26 @@ export function isUrduScript(text) {
 }
 
 /**
- * Strip vowels and weak semi-vowels from a Latin string to produce a
- * consonant skeleton. Urdu spellings often omit short vowels entirely and
- * English variants may insert w/y to spell long vowel sounds, as in
- * Sohail ↔ سہیل.
+ * Strip all vowels from a Latin string to produce a consonant skeleton.
+ * Urdu script omits short vowels, so comparing consonant skeletons
+ * is the most reliable way to match Urdu transliterations with English.
  */
 function consonantSkeleton(str) {
-  return str.toLowerCase().replace(/[aeiouwy]/g, '');
+  return str.toLowerCase().replace(/[aeiou]/g, '');
+}
+
+function dedupeLatinLetters(str) {
+  return str.replace(/(.)\1+/g, '$1');
+}
+
+function codesMatch(codesLeft, codesRight) {
+  if (!codesLeft || !codesRight) return false;
+
+  return (
+    codesLeft.primary === codesRight.primary ||
+    codesLeft.primary === codesRight.secondary ||
+    codesLeft.secondary === codesRight.primary
+  );
 }
 
 function tokenizeName(str) {
@@ -178,69 +191,72 @@ function compareNameTokens(left, right) {
 export function compareUrduWithEnglish(urduName, englishName) {
   const urdu = normaliseNameText(urduName);
   const english = normaliseNameText(englishName);
-  const englishComparable = normaliseEnglishForUrduComparison(english);
 
   if (!urdu || !english) return null;
 
   const transliteration = transliterateUrdu(urdu);
   const transliterationNorm = transliterateUrduNormalised(urdu);
+  const transliterationVariants = [...new Set([
+    ...transliterateUrduVariants(urdu),
+    transliteration,
+    transliterationNorm,
+  ])].filter(Boolean);
+  const transliterationVariantNorms = [...new Set(
+    transliterationVariants.map((value) => dedupeLatinLetters(value))
+  )];
   const transliterationJoined = transliteration.replace(/\s+/g, '');
-  const englishJoined = englishComparable.replace(/\s+/g, '');
+  const englishJoined = english.replace(/\s+/g, '');
 
   if (!transliteration) return null;
 
   // --- Layer 1 & 2: full-string Double Metaphone ---
   const codesTranslit = getPhoneticCodes(transliteration);
   const codesTranslitNorm = getPhoneticCodes(transliterationNorm);
-  const codesEnglish = getPhoneticCodes(englishComparable);
+  const codesEnglish = getPhoneticCodes(english);
 
   if (!codesTranslit || !codesEnglish) return null;
 
-  const isMatchRaw =
-    codesTranslit.primary === codesEnglish.primary ||
-    codesTranslit.primary === codesEnglish.secondary ||
-    codesTranslit.secondary === codesEnglish.primary;
+  const isMatchRaw = transliterationVariants.some((value) => {
+    return codesMatch(getPhoneticCodes(value), codesEnglish);
+  });
 
-  const isMatchNorm = codesTranslitNorm
-    ? codesTranslitNorm.primary === codesEnglish.primary ||
-      codesTranslitNorm.primary === codesEnglish.secondary ||
-      codesTranslitNorm.secondary === codesEnglish.primary
-    : false;
+  const isMatchNorm = transliterationVariantNorms.some((value) => {
+    return codesMatch(getPhoneticCodes(value), codesEnglish);
+  });
 
   // --- Layer 3: consonant-skeleton Double Metaphone ---
   const skelTranslit = consonantSkeleton(transliteration);
-  const skelEnglish  = consonantSkeleton(englishComparable);
+  const skelEnglish  = consonantSkeleton(english);
   const codesSkelTranslit = skelTranslit ? getPhoneticCodes(skelTranslit) : null;
   const codesSkelEnglish  = skelEnglish  ? getPhoneticCodes(skelEnglish)  : null;
 
-  const isMatchSkeleton =
-    codesSkelTranslit && codesSkelEnglish
-      ? codesSkelTranslit.primary === codesSkelEnglish.primary ||
-        codesSkelTranslit.primary === codesSkelEnglish.secondary ||
-        codesSkelTranslit.secondary === codesSkelEnglish.primary
-      : false;
+  const isMatchSkeleton = [...new Set(
+    transliterationVariants.map((value) => consonantSkeleton(value)).filter(Boolean)
+  )].some((value) => {
+    return codesMatch(getPhoneticCodes(value), codesSkelEnglish);
+  });
 
   // --- Layer 4: exact transliteration string match ---
   const isExactTranslit =
-    transliteration.toLowerCase() === englishComparable.toLowerCase() ||
-    transliterationNorm.toLowerCase() === englishComparable.toLowerCase();
+    transliterationVariants.some((value) => value.toLowerCase() === english.toLowerCase()) ||
+    transliterationVariantNorms.some((value) => value.toLowerCase() === english.toLowerCase());
 
   // --- Layer 5: exact consonant-skeleton string match ---
-  const isSkeletonExact = skelTranslit === skelEnglish;
+  const isSkeletonExact = [...new Set(
+    transliterationVariants.map((value) => consonantSkeleton(value))
+  )].some((value) => value === skelEnglish);
 
   // --- Layer 6: joined-name fallback (ignores spaces) ---
-  const codesJoinedTranslit = transliterationJoined ? getPhoneticCodes(transliterationJoined) : null;
   const codesJoinedEnglish = englishJoined ? getPhoneticCodes(englishJoined) : null;
 
-  const isMatchJoined =
-    codesJoinedTranslit && codesJoinedEnglish
-      ? codesJoinedTranslit.primary === codesJoinedEnglish.primary ||
-        codesJoinedTranslit.primary === codesJoinedEnglish.secondary ||
-        codesJoinedTranslit.secondary === codesJoinedEnglish.primary
-      : false;
+  const isMatchJoined = [...new Set(
+    transliterationVariants.map((value) => value.replace(/\s+/g, '')).filter(Boolean)
+  )].some((value) => {
+    return codesMatch(getPhoneticCodes(value), codesJoinedEnglish);
+  });
 
   // --- Layer 7: token-by-token fallback ---
-  const isMatchTokens = compareNameTokens(transliteration, englishComparable);
+  const isMatchTokens = transliterationVariants.some((value) => compareNameTokens(value, english));
 
   const isMatch =
     isMatchRaw ||
@@ -254,7 +270,6 @@ export function compareUrduWithEnglish(urduName, englishName) {
   return {
     urdu,
     english,
-    englishComparable,
     transliteration,
     transliterationNorm,
     skelTranslit,
